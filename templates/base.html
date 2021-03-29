@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div style="background-color: aqua">
+    {% if messages %}
+        {% for message in messages %}
+            <h1 style="background-color: red">{{ message }}</h1>
+        {% endfor %}
+    {% endif %}
+
+    <form method="get" action="{% url 'main_page' %}">
+        <input type="submit" value="Main page">
+    </form>
+
+
+    {% block content %}
+    {% endblock %}
+</div>
+</body>
+</html>
