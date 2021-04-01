@@ -12,9 +12,9 @@ class CustomTokenAuthentication(TokenAuthentication):
     def authenticate_credentials(self, key):
         user, token = super().authenticate_credentials(key)
         time_to_live = timedelta(minutes=5)
-        if timezone.now() > token.created + time_to_live:
+        if timezone.now() > token.created:
             token.delete()
-            raise exceptions.AuthenticationFailed('Token expired')
+            raise exceptions.AuthenticationFailed('Invalid Token')
         token.created = timezone.now() + time_to_live
         token.save()
         return user, token

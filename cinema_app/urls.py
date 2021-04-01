@@ -1,8 +1,7 @@
 from django.urls import path
 from rest_framework.authtoken import views
 
-# from cinema_app.api.resources import ExampleView
-from cinema_app.api.resources import CustomAuthToken, MovieSeanceViewSet
+from cinema_app.api.resources import CustomAuthToken, MovieSeanceViewSet, LogoutView
 from cinema_app.views import Login, Logout, UserCreateView, CinemaHallCreateView, MovieSeanceCreateView, \
     UpdateCinemaHallView, UpdateMovieSeanceView, BuyingCreateView, MovieSeanceListView, BuyingListView
 
@@ -19,14 +18,14 @@ urlpatterns = [
     path('purchases/', BuyingListView.as_view(), name='purchases'),
     path('api-token-auth/', views.obtain_auth_token),
     path('api/auth', CustomAuthToken.as_view(), name='auth'),
+    path('api/logout', LogoutView.as_view(), name='api_logout'),
     path('api/seances_day/<str:show_day>/', MovieSeanceViewSet.as_view({'get': 'list',
                                                                         'post': 'create',
                                                                         'put': 'update',
                                                                         'patch': 'partial_update', }), name='show_day'),
     path('api/seances_day/<str:show_day>/<int:pk>/', MovieSeanceViewSet.as_view({'get': 'list',
-                                                                            'post': 'create',
-                                                                            'put': 'update',
-                                                                            'patch': 'partial_update', }),
+                                                                                 'put': 'update',
+                                                                                 'patch': 'partial_update', }),
          name='show_day'),
 
 ]

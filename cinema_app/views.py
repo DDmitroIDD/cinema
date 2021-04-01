@@ -5,11 +5,9 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import redirect
 
-# Create your views here.
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView, UpdateView, ListView
-
 
 from cinema_app.forms import CustomUserForm, CinemaHallForm, MovieSeanceForm, BuyingForm, ChoiceFilterForm
 from cinema_app.models import CustomUser, CinemaHall, MovieSeance, Buying
@@ -83,7 +81,8 @@ class UpdateMovieSeanceView(PermissionRequiredMixin, UpdateView):
     template_name = 'update_movie_seance.html'
 
 
-class BuyingCreateView(CreateView):
+class BuyingCreateView(PermissionRequiredMixin, CreateView):
+    permission_required = 'is_authentication'
     model = Buying
     form_class = BuyingForm
     success_url = '/'

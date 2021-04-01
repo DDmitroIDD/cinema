@@ -1,5 +1,3 @@
-from datetime import timedelta, time
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -16,7 +14,7 @@ class CinemaHall(models.Model):
     hall_size = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f'Hall name: {self.hall_name} Hall size: {self.hall_size}'
+        return f'Hall name: {self.hall_name}'
 
 
 class MovieSeance(models.Model):

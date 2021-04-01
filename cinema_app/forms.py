@@ -15,6 +15,7 @@ def q_set(start_time, end_time, start_data, end_data):
 
 
 class CustomUserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput)
     password_confirmation = forms.CharField(widget=forms.PasswordInput)
 
     class Meta:

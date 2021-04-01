@@ -1,4 +1,3 @@
-from django.db.models import Q
 from rest_framework import serializers
 
 from cinema_app.forms import q_set
@@ -6,16 +5,24 @@ from cinema_app.models import CustomUser, CinemaHall, MovieSeance, Buying
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    password_confirmation = serializers.CharField(required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'password', 'password_confirmation')
+        write_only_fields = ('password', 'password_confirmation',)
+        read_only_fields = ('id',)
+
+    def validate(self, data):
+        if self.context['request'].user.is_anonymous:
+            if data['password'] != data['password_confirmation']:
+                raise serializers.ValidationError('Passwords do not match!')
+            return data
+        raise serializers.ValidationError('You are already registered!')
 
     def create(self, validated_data):
         user = CustomUser.objects.create_user(**validated_data)
         return user
-
-    class Meta:
-        model = CustomUser
-        fields = ('id', 'username', 'password', )
-        write_only_fields = ('password',)
-        read_only_fields = ('id',)
 
 
 class MovieSeanceSerializer(serializers.ModelSerializer):
@@ -62,21 +69,6 @@ class MovieSeanceSerializer(serializers.ModelSerializer):
         return attrs
 
 
-# class MovieSeanceUpdateSerializer(serializers.ModelSerializer):
-#     start_time_seance = serializers.TimeField(required=True)
-#     end_time_seance = serializers.TimeField(required=True)
-#     show_start_date = serializers.DateField(required=True)
-#     show_end_date = serializers.DateField(required=True)
-#     price = serializers.IntegerField(required=True)
-#
-#     class Meta:
-#         model = MovieSeance
-#         fields = ('id', 'movie_title', 'show_hall',
-#                   'start_time_seance', 'end_time_seance', 'show_start_date', 'show_end_date', 'price', 'free_seats')
-#         read_only_fields = ('id', 'free_seats',)
-#
-
-
 class CinemaHallSerializer(serializers.ModelSerializer):
     movies = MovieSeanceSerializer(many=True, required=False)
     hall_size = serializers.IntegerField(required=True)
@@ -101,16 +93,19 @@ class CinemaHallSerializer(serializers.ModelSerializer):
 
 class BuyingSerializer(serializers.ModelSerializer):
     qnt = serializers.IntegerField(required=True)
-    # spent = serializers.IntegerField()
+    spent = serializers.SerializerMethodField()
 
     class Meta:
         model = Buying
-        fields = '__all__'
-        read_only_fields = ('id', )
+        fields = ('id', 'spent', 'user', 'movie', 'qnt')
+        read_only_fields = ('id', 'spent', 'user', )
+
+    def get_spent(self, obj):
+        return obj.user.spent
 
     def validate(self, attrs):
         movie = MovieSeance.objects.get(id=attrs['movie'].id)
-        user = CustomUser.objects.get(id=attrs['user'].id)
+        user = CustomUser.objects.get(id=self.context['request'].user.id)
         qnt = attrs['qnt']
         if (movie.free_seats - qnt) < 0:
             raise serializers.ValidationError({'qnt': 'Not enough free seats!'})
@@ -118,6 +113,5 @@ class BuyingSerializer(serializers.ModelSerializer):
         user.spent += qnt * movie.price
         movie.save()
         user.save()
+        attrs['user'] = user
         return attrs
-
-

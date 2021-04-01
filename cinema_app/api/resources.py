@@ -4,9 +4,10 @@ from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.views import APIView
 
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -14,33 +15,27 @@ from rest_framework.response import Response
 from cinema_app.api.filters import MyTimeRangeAndHallFilter
 from cinema_app.api.serializers import CinemaHallSerializer, MovieSeanceSerializer, BuyingSerializer, \
     CustomUserSerializer
-from cinema_app.authentication import CustomTokenAuthentication
 from cinema_app.models import CinemaHall, MovieSeance, Buying, CustomUser
-
-
-# class ExampleView(APIView):
-#
-#     authentication_classes = [CustomTokenAuthentication]
-#
-#     def get(self, request, format=None):
-#         content = {
-#             'user': str(request.user),
-#             'token': str(request.auth),
-#             # 'token_created': str(request.auth.created),
-#             # 'token_is_dead': request.auth.created + timedelta(minutes=10),
-#         }
-#         return Response(content)
 
 
 class CustomAuthToken(ObtainAuthToken):
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data,
-                                           context={'request': request})
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
+        if created:
+            token.created += timedelta(minutes=5)
+            token.save()
         return Response({'token': token.key})
+
+
+class LogoutView(APIView):
+    def post(self, request, *args, **kwargs):
+        token: Token = request.auth
+        token.delete()
+        return Response()
 
 
 class CustomPagination(PageNumberPagination):
@@ -52,12 +47,12 @@ class CustomPagination(PageNumberPagination):
 class CustomUserViewSet(ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+    http_method_names = ['post', ]
     permission_classes = [IsAdminUser]
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            self.permission_classes = (AllowAny,)
-
+            self.permission_classes = (AllowAny, )
         return super().get_permissions()
 
 
@@ -69,8 +64,7 @@ class CinemaHallViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            self.permission_classes = (AllowAny,)
-
+            self.permission_classes = (AllowAny, )
         return super().get_permissions()
 
 
@@ -107,4 +101,4 @@ class BuyingViewSet(ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return super().get_queryset().filter(user=self.request.user)
+        return super().get_queryset().filter(user=self.request.user).order_by('-id')
