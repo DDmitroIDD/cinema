@@ -15,7 +15,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if self.context['request'].user.is_anonymous:
-            if data['password'] != data['password_confirmation']:
+            if data['password'] != data.pop('password_confirmation'):
                 raise serializers.ValidationError('Passwords do not match!')
             return data
         raise serializers.ValidationError('You are already registered!')
